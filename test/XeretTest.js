@@ -1,6 +1,6 @@
 var XeretToken = artifacts.require("./Xeret.sol");
 
-contract('Xeret', function(accounts) {
+contract('XeretToken', function(accounts) {
     var tokenInstance;
 
     it('Initializes the first contract with the correct values', function() {
@@ -18,7 +18,7 @@ contract('Xeret', function(accounts) {
         });
     });
 
-    it('allocates the inital supply upon deployment', function() {
+    it('allocates the initial supply upon deployment', function() {
         return XeretToken.deployed().then(function(instance) {
             tokenInstance = instance;
             return tokenInstance.totalSupply();
@@ -65,7 +65,7 @@ contract('Xeret', function(accounts) {
         }).then(function(receipt) {
             assert.equal(receipt.logs.length, 1, 'triggers one event');
             assert.equal(receipt.logs[0].event, 'Approval', 'should be the "Approval" event');
-            assert.equal(receipt.logs[0].args._owner, accounts[0], 'logs the account the tokens are authorised to');
+            assert.equal(receipt.logs[0].args._owner, accounts[0], 'logs the account the tokens are authorized to');
             assert.equal(receipt.logs[0]._spender, accounts[1], 'logs the account the tokens are authorized to');
             assert.equal(receipt.logs[0]._value, 100, 'logs the transfer amount');
             return tokenInstance.allowance(accounts[0], accounts[1]);
@@ -98,7 +98,7 @@ contract('Xeret', function(accounts) {
             assert.equal(receipt.logs.length, 1, 'triggers one event');
             assert.equal(receipt.logs[0].event, 'Transfer', 'should be the "Transfer" event');
             assert.equal(receipt.logs[0].args._from, fromAccount, 'logs the account the tokens are transferred from');
-            assert.equal(receipt.logs[0].args_to, toAccount, 'logs the account the tokens are transfered to');
+            assert.equal(receipt.logs[0].args._to, toAccount, 'logs the account the tokens are transfered to');
             assert.equal(receipt.logs[0].args._value, 10, 'logs the transfer amount');
             return tokenInstance.balanceOf(fromAccount);
         }).then(function(balance) {
