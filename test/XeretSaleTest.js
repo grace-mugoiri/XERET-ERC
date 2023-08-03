@@ -25,5 +25,55 @@ contract('XeretTokenSale', function(accounts) {
         });
     });
 
-    
-})
+    it('facilitates token buying', function() {
+        return XeretToken.deployed().then(function(instance) {
+            tokenInstance = instance;
+            return tokenSaleInstance.deployed();
+        }).then(function(instance) {
+            tokenSaleInstance =  instance;
+            return tokenInstance.transfer(tokenSaleInstance.address, tokensAvailable, {from: admin })
+        }).then(function(receipt) {
+            numberOfTokens = 10;
+            return tokenSaleInstance.buyTokens(numberOfTokens, {from: buyer, value: numberOfTokens * tokenPrice})
+        }).then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, 'triggers one event');
+            assert.equal(receipt.logs[0].event, 'Sell', 'should be the "Sell" event');
+            assert.equal(receipt.logs[0].args._buyer, buyer, 'logs the account that purchased the tokens');
+            assert.equal(receipt.logs[0].args._amount, numberOfTokens, 'logs the number of tokens purchased');
+            return tokenSaleInstance.tokensSold();
+        }).then(function(amount) {
+            assert.equal(amount.toNumber(), numberOfTokens, 'increments the number of tokens sold');
+            return tokenInstance.balanceOf(buyer);
+        }).then(function(balance) {
+            assert.equal(balance.toNumber(), numberOfTokens);
+            return tokenInstance.balanceOf(tokenSaleInstance.address);
+        }).then(function(balance) {
+            assert.equal(balance.toNumber(), tokensAvailable - numberOfTokens);
+            return tokenSaleInstance.buyTokens(numberOfTokens, {from: buyer, value: 1});
+        }).then(assert.fail).catch(function(error) {
+            assert(error.message.indexOf('revert') >= 0, 'msg.value must equal of tokens in wei');
+            return tokenSaleInstance.buyTokens(800000, {from: buyer, value: numberOfTokens * tokenPrice})
+        }).then(assert.fail).catch(function(error) {
+            assert(error.message.indexOf('revert') >= 0, 'cannot purchase more tokens than available');
+        });
+    });
+
+    it('ends token sale', function() {
+        return XeretToken.deployed().then(function(instance) {
+            tokenInstance = instance;
+            return XeretTokenSale.deployed();
+        }).then(function(instance) {
+            tokenSaleInstance = instance;
+            return tokenSaleInstance.endSale({from: buyer});
+        }).then(assert.fail).catch(function(error) {
+            assert(error.message.indexOf('revert' >= 0, 'must be admin to end sale'));
+            return tokenSaleInstance.endSale({ from: admin});
+        }).then(function(receipt) {
+            return tokenInstance.balanceOf(admin);
+        }).then(function(balance) {
+            assert.equal(balance.toNumber(), 999990, 'returns all sold dapp tokens to admin');
+            balance = web3.eth.getBalance(tokenSaleInstance.address)
+            assert.equal(balance.toNumber(), 0);
+        });
+    });
+});
